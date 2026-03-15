@@ -1,0 +1,88 @@
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
+import { useAuth } from "../context/AuthContext"
+import PrivateRoute from "./PrivateRoute"
+import Layout from "../Layout/Layout"
+
+import Login from "../components/Login"
+import Clients from "../pages/Clients"
+import Cities from "../pages/Cities"
+import Addresses from "../pages/Addresses"
+import Dashboard from "../pages/Dashboard"
+import CityForm from "../pages/CityForm"
+import AddressForm from "../pages/AddressForm"
+import ClientForm from "../pages/ClientForm"
+import Register from "../pages/Register"
+import Users from "../pages/Users"
+import UserForm from "../pages/UserForm"
+
+export default function AppRouter() {
+  const { user } = useAuth()
+
+  return (
+    <BrowserRouter>
+      <Routes>
+
+        {/* Pública */}
+        <Route path="/login" element={
+          user ? <Navigate to="/clients" replace /> : <Login />
+        } />
+
+        <Route path="/register" element={
+          user ? <Navigate to="/clients" replace /> : <Register />
+        } />
+        <Route path="/users" element={
+          <PrivateRoute onlyAdmin>
+            <Layout><Users /></Layout>
+          </PrivateRoute>
+        } />
+        <Route path="/users/create" element={
+          <PrivateRoute onlyAdmin>
+            <Layout><UserForm /></Layout>
+          </PrivateRoute>
+        } />
+
+        {/* Clientes */}
+        <Route path="/clients" element={
+          <PrivateRoute><Layout><Clients /></Layout></PrivateRoute>
+        } />
+        <Route path="/clients/create" element={
+          <PrivateRoute><Layout><ClientForm /></Layout></PrivateRoute>
+        } />
+        <Route path="/clients/edit/:id" element={
+          <PrivateRoute onlyAdmin><Layout><ClientForm /></Layout></PrivateRoute>
+        } />
+
+        {/* Ciudades */}
+        <Route path="/cities" element={
+          <PrivateRoute><Layout><Cities /></Layout></PrivateRoute>
+        } />
+        <Route path="/cities/create" element={
+          <PrivateRoute onlyAdmin><Layout><CityForm /></Layout></PrivateRoute>
+        } />
+        <Route path="/cities/edit/:id" element={
+          <PrivateRoute onlyAdmin><Layout><CityForm /></Layout></PrivateRoute>
+        } />
+
+        {/* Direcciones */}
+        <Route path="/addresses" element={
+          <PrivateRoute><Layout><Addresses /></Layout></PrivateRoute>
+        } />
+        <Route path="/addresses/create" element={
+          <PrivateRoute><Layout><AddressForm /></Layout></PrivateRoute>
+        } />
+        <Route path="/addresses/edit/:id" element={
+          <PrivateRoute onlyAdmin><Layout><AddressForm /></Layout></PrivateRoute>
+        } />
+
+        {/* Solo admin */}
+        <Route path="/dashboard" element={
+          <PrivateRoute onlyAdmin><Layout><Dashboard /></Layout></PrivateRoute>
+        } />
+
+        {/* Default */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
+
+      </Routes>
+    </BrowserRouter>
+  )
+}

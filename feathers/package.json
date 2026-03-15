@@ -1,0 +1,79 @@
+{
+  "name": "feathersjsp",
+  "description": "prueba tecnica",
+  "version": "0.0.0",
+  "homepage": "",
+  "private": true,
+  "main": "src",
+  "keywords": [
+    "feathers"
+  ],
+  "author": {
+    "name": "ismaelperalt",
+    "email": "ismaelsaguay90@gmail.com"
+  },
+  "contributors": [],
+  "bugs": {},
+  "directories": {
+    "lib": "src",
+    "test": "test/",
+    "config": "config/"
+  },
+  "engines": {
+    "node": "^24.0.0",
+    "npm": ">= 3.0.0"
+  },
+  "scripts": {
+    "test": "npm run lint && npm run compile && npm run mocha",
+    "lint": "eslint src/. test/. --config .eslintrc.json --ext .ts --fix",
+    "dev": "ts-node-dev --no-notify src/",
+    "start": "npm run compile && node lib/",
+    "mocha": "mocha --require ts-node/register --require source-map-support/register \"test/**/*.ts\" --recursive --exit",
+    "compile": "shx rm -rf lib/ && tsc"
+  },
+  "standard": {
+    "env": [
+      "mocha"
+    ],
+    "ignore": []
+  },
+  "types": "lib/",
+  "dependencies": {
+    "@feathersjs/authentication": "^4.5.19",
+    "@feathersjs/authentication-local": "^4.5.19",
+    "@feathersjs/authentication-oauth": "^4.5.19",
+    "@feathersjs/configuration": "^4.5.19",
+    "@feathersjs/errors": "^4.5.19",
+    "@feathersjs/express": "^4.5.19",
+    "@feathersjs/feathers": "^4.5.19",
+    "@feathersjs/socketio": "^4.5.19",
+    "@feathersjs/transport-commons": "^5.0.42",
+    "compression": "^1.8.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "feathers-sequelize": "^6.4.0",
+    "helmet": "^5.1.1",
+    "pg": "^8.20.0",
+    "sequelize": "^6.37.8",
+    "serve-favicon": "^2.5.1",
+    "winston": "^3.19.0"
+  },
+  "devDependencies": {
+    "@types/bluebird": "^3.5.42",
+    "@types/compression": "^1.8.1",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/mocha": "^10.0.10",
+    "@types/serve-favicon": "^2.5.7",
+    "@types/validator": "^13.15.10",
+    "@typescript-eslint/eslint-plugin": "^8.57.0",
+    "@typescript-eslint/parser": "^8.57.0",
+    "axios": "^1.13.6",
+    "eslint": "^8.57.1",
+    "mocha": "^10.8.2",
+    "shx": "^0.4.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^4.9.5"
+  }
+}
