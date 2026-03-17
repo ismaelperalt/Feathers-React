@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { createCity, updateCity, getCity } from "../api/publicService"
+import { createCity, updateCity, getCity } from "../../api/publicService"
 
 export default function CityForm() {
   const { id } = useParams()
@@ -12,7 +12,7 @@ export default function CityForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // ✅ Carga solo la ciudad necesaria, no todas
+  // Carga solo la ciudad necesaria, no todas
   useEffect(() => {
     if (!isEdit) return
     getCity(Number(id))
@@ -27,7 +27,7 @@ export default function CityForm() {
     e.preventDefault()
     setError(null)
 
-    // ✅ Validación antes de llamar al servidor
+    //  Validación antes de llamar al servidor
     if (!name.trim()) {
       setError("El nombre de la ciudad es obligatorio")
       return

@@ -1,5 +1,5 @@
 // src/App.tsx
-import Login from "./components/Login"
+import Login from "./pages/login/Login"
 import Clients from "./pages/Clients"
 
 export default function App() {

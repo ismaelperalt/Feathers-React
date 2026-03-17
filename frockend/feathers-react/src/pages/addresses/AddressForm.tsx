@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { createAddress, updateAddress, getAddress, getCities } from "../api/publicService"
-import type { City } from "../api/publicService"
+import { createAddress, updateAddress, getAddress, getCities } from "../../api/publicService"
+import type { City } from "../../api/publicService"
 
 export default function AddressForm() {
   const { id } = useParams()
@@ -17,10 +17,10 @@ export default function AddressForm() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // ✅ Carga ciudades para el select
+    // Carga ciudades para el select
     getCities().then(setCities)
 
-    // ✅ Carga solo la dirección necesaria
+    //  Carga solo la dirección necesaria
     if (!isEdit) return
     getAddress(Number(id))
       .then(address => {
@@ -36,7 +36,7 @@ export default function AddressForm() {
     e.preventDefault()
     setError(null)
 
-    // ✅ Validación antes de llamar al servidor
+    //  Validación antes de llamar al servidor
     if (!street.trim()) {
       setError("La calle es obligatoria")
       return

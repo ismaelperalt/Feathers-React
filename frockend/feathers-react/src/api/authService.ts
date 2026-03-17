@@ -17,7 +17,7 @@ export const login = async (email: string, password: string): Promise<LoginRespo
     password
   })
 
-  // ✅ sessionStorage — cada pestaña tiene su propia sesión
+  //  sessionStorage — cada pestaña tiene su propia sesión
   sessionStorage.setItem("feathers-jwt", response.data.accessToken)
 
   return response.data
@@ -25,6 +25,6 @@ export const login = async (email: string, password: string): Promise<LoginRespo
 
 export const logout = async (): Promise<void> => {
   await api.delete("/authentication")
-  // ✅ sessionStorage
+  // sessionStorage
   sessionStorage.removeItem("feathers-jwt")
 }

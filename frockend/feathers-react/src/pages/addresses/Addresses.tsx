@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react"
-import { getAddresses, deleteAddress } from "../api/publicService"
-import type { Address } from "../api/publicService"
-import feathersClient from "../api/feathers"
-import api from "../api/axios"  // ✅ nuevo import
-import { useAuth } from "../context/AuthContext"
+import { getAddresses, deleteAddress } from "../../api/publicService"
+import type { Address } from "../../api/publicService"
+import feathersClient from "../../api/feathers"
+import api from "../../api/axios"  //  nuevo import
+import { useAuth } from "../../context/AuthContext"
 import { useNavigate } from "react-router-dom"
 
 export default function Addresses() {
@@ -16,7 +16,7 @@ export default function Addresses() {
   useEffect(() => {
     const service = feathersClient.service("addresses")
 
-    // ✅ Fetch completo para traer city populada
+    //  Fetch completo para traer city populada
     const handleCreated = async (data: Address) => {
       if (!data?.id) return
       try {
@@ -27,7 +27,7 @@ export default function Addresses() {
       }
     }
 
-    // ✅ Igual para patched — puede venir sin city populada
+    //  Igual para patched — puede venir sin city populada
     const handlePatched = async (data: Address) => {
       try {
         const res = await api.get<Address>(`/addresses/${data.id}`)

@@ -17,6 +17,6 @@ client.configure(authentication({
   storage: window.sessionStorage
 }))
 
-// ✅ Exporta también el socket
+// Exporta también el socket
 export { socket }
 export default client

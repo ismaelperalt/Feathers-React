@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react"
-import { getClients, deleteClient } from "../api/clientService"
-import type { Client } from "../api/clientService"
-import feathersClient from "../api/feathers"
-import { useAuth } from "../context/AuthContext"
+import { getCities, deleteCity } from "../../api/publicService"
+import type { City } from "../../api/publicService"
+import feathersClient from "../../api/feathers"
+import { useAuth } from "../../context/AuthContext"
 import { useNavigate } from "react-router-dom"
 
 interface FeathersService {
@@ -10,38 +10,38 @@ interface FeathersService {
   off(event: string, handler: (data: unknown) => void): void
 }
 
-export default function Clients() {
-  const [clients, setClients] = useState<Client[]>([])
+export default function Cities() {
+  const [cities, setCities] = useState<City[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { isAdmin } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
-    const service = feathersClient.service("clients") as unknown as FeathersService
+    const service = feathersClient.service("cities") as unknown as FeathersService
 
     const handleCreated = (data: unknown) => {
-      const newClient = data as Client
-      if (newClient?.id) setClients(prev => [...prev, newClient])
+      const newCity = data as City
+      if (newCity?.id) setCities(prev => [...prev, newCity])
     }
     const handlePatched = (data: unknown) => {
-      const updated = data as Client
-      setClients(prev => prev.map(c => c.id === updated.id ? updated : c))
+      const updated = data as City
+      setCities(prev => prev.map(c => c.id === updated.id ? updated : c))
     }
     const handleRemoved = (data: unknown) => {
-      const removed = data as Client
-      setClients(prev => prev.filter(c => c.id !== removed.id))
+      const removed = data as City
+      setCities(prev => prev.filter(c => c.id !== removed.id))
     }
 
-    // ✅ 1. Primero suscribirse a los eventos
+    // 1. Primero suscribirse
     service.on("created", handleCreated)
     service.on("patched", handlePatched)
     service.on("removed", handleRemoved)
 
-    // ✅ 2. Luego cargar datos iniciales
-    getClients()
-      .then(setClients)
-      .catch(() => setError("Error al cargar los clientes"))
+    //  2. Luego cargar datos iniciales
+    getCities()
+      .then(setCities)
+      .catch(() => setError("Error al cargar las ciudades"))
       .finally(() => setLoading(false))
 
     return () => {
@@ -52,12 +52,12 @@ export default function Clients() {
   }, [])
 
   const handleDelete = async (id: number) => {
-    if (!confirm("¿Eliminar este cliente?")) return
+    if (!confirm("¿Eliminar esta ciudad?")) return
     try {
-      await deleteClient(id)
-      // ✅ no hace falta setClients — el socket "removed" ya lo maneja
+      await deleteCity(id)
+      // sin setClients manual — el socket "removed" ya lo maneja
     } catch {
-      setError("Error al eliminar el cliente")
+      setError("Error al eliminar la ciudad")
     }
   }
 
@@ -76,50 +76,44 @@ export default function Clients() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Clientes</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Ciudades</h1>
         {isAdmin && (
           <button
-            onClick={() => navigate("/clients/create")}
+            onClick={() => navigate("/cities/create")}
             className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
           >
-            + Nuevo cliente
+            + Nueva ciudad
           </button>
         )}
       </div>
 
-      {clients.length === 0 ? (
-        <div className="text-center text-gray-400 py-16">No hay clientes registrados.</div>
+      {cities.length === 0 ? (
+        <div className="text-center text-gray-400 py-16">No hay ciudades registradas.</div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
           <table className="w-full text-sm text-left">
             <thead className="bg-gray-50 text-gray-600 uppercase text-xs">
               <tr>
                 <th className="px-4 py-3">Nombre</th>
-                <th className="px-4 py-3">Email</th>
-                <th className="px-4 py-3">Teléfono</th>
-                <th className="px-4 py-3">Dirección</th>
-                <th className="px-4 py-3">Ciudad</th>
+                <th className="px-4 py-3">Provincia</th>
                 {isAdmin && <th className="px-4 py-3 text-right">Acciones</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {clients.map(client => (
-                <tr key={client.id} className="hover:bg-gray-50 transition">
-                  <td className="px-4 py-3 font-medium text-gray-800">{client.name}</td>
-                  <td className="px-4 py-3 text-gray-600">{client.email}</td>
-                  <td className="px-4 py-3 text-gray-600">{client.phone ?? "—"}</td>
-                  <td className="px-4 py-3 text-gray-600">{client.address?.street ?? "—"}</td>
-                  <td className="px-4 py-3 text-gray-600">{client.address?.city?.name ?? "—"}</td>
+              {cities.map(city => (
+                <tr key={city.id} className="hover:bg-gray-50 transition">
+                  <td className="px-4 py-3 font-medium text-gray-800">{city.name}</td>
+                  <td className="px-4 py-3 text-gray-600">{city.state ?? "—"}</td>
                   {isAdmin && (
                     <td className="px-4 py-3 text-right space-x-2">
                       <button
-                        onClick={() => navigate(`/clients/edit/${client.id}`)}
+                        onClick={() => navigate(`/cities/edit/${city.id}`)}
                         className="text-blue-600 hover:underline text-xs font-medium"
                       >
                         Editar
                       </button>
                       <button
-                        onClick={() => handleDelete(client.id)}
+                        onClick={() => handleDelete(city.id)}
                         className="text-red-500 hover:underline text-xs font-medium"
                       >
                         Eliminar

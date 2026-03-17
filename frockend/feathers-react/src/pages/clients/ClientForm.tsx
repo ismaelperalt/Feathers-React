@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { createClient, updateClient, getClient } from "../api/clientService"
-import { getAddresses } from "../api/publicService"
-import type { Address } from "../api/publicService"
-import { useAuth } from "../context/AuthContext"
-import { getUsers } from "../api/userService"
-import type { User } from "../api/userService"
+import { createClient, updateClient, getClient } from "../../api/clientService"
+import { getAddresses } from "../../api/publicService"
+import type { Address } from "../../api/publicService"
+import { useAuth } from "../../context/AuthContext"
+import { getUsers } from "../../api/userService"
+import type { User } from "../../api/userService"
 
 export default function ClientForm() {
   const { id } = useParams()

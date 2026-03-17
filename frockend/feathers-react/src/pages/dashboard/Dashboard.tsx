@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react"
-import { getClients } from "../api/clientService"
-import { getCities, getAddresses } from "../api/publicService"
+import { getClients } from "../../api/clientService"
+import { getCities, getAddresses } from "../../api/publicService"
 import { useNavigate } from "react-router-dom"
-import api from "../api/axios"
-import feathersClient, { socket } from "../api/feathers"
+import api from "../../api/axios"
+import feathersClient, { socket } from "../../api/feathers"
 
 interface Stats {
   clients: number
@@ -56,11 +56,11 @@ export default function Dashboard() {
 
     let cleanup: (() => void) | undefined
 
-    // ✅ Si ya está conectado suscríbete de inmediato
+    // Si ya está conectado suscríbete de inmediato
     if (socket.connected) {
       cleanup = setupListeners()
     } else {
-      // ✅ Si no, espera la conexión
+      //  Si no, espera la conexión
       socket.once("connect", () => {
         cleanup = setupListeners()
       })

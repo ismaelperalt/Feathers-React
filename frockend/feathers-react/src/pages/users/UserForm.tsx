@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import feathersClient from "../api/feathers"
+import feathersClient from "../../api/feathers"
 
 const isValidEmail = (email: string) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
@@ -17,7 +17,7 @@ export default function UserForm() {
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({})
 
-  // ✅ Carga datos del usuario si es edición
+  // Carga datos del usuario si es edición
   useEffect(() => {
     if (!isEdit) return
     feathersClient.service("users").get(Number(id))
@@ -35,7 +35,7 @@ export default function UserForm() {
       else setFieldErrors(p => ({ ...p, email: undefined }))
     }
     if (field === "password") {
-      // ✅ En edición la contraseña es opcional
+      // En edición la contraseña es opcional
       if (!isEdit && !password) setFieldErrors(p => ({ ...p, password: "La contraseña es obligatoria" }))
       else if (password && password.length < 4) setFieldErrors(p => ({ ...p, password: "Mínimo 4 caracteres" }))
       else setFieldErrors(p => ({ ...p, password: undefined }))
@@ -50,12 +50,12 @@ export default function UserForm() {
       setError("Ingresa un correo electrónico válido")
       return
     }
-    // ✅ Contraseña obligatoria solo al crear
+    // Contraseña obligatoria solo al crear
     if (!isEdit && (!password || password.length < 4)) {
       setError("La contraseña debe tener al menos 4 caracteres")
       return
     }
-    // ✅ Si se ingresó contraseña al editar, validar longitud
+    // Si se ingresó contraseña al editar, validar longitud
     if (isEdit && password && password.length < 4) {
       setError("La contraseña debe tener al menos 4 caracteres")
       return
@@ -64,7 +64,7 @@ export default function UserForm() {
     setLoading(true)
     try {
       if (isEdit) {
-        // ✅ Solo envía contraseña si se ingresó una nueva
+        // Solo envía contraseña si se ingresó una nueva
         const data: any = { email, role }
         if (password) data.password = password
         await feathersClient.service("users").patch(Number(id), data)
