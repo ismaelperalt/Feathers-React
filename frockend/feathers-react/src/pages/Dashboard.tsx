@@ -3,6 +3,7 @@ import { getClients } from "../api/clientService"
 import { getCities, getAddresses } from "../api/publicService"
 import { useNavigate } from "react-router-dom"
 import api from "../api/axios"
+import feathersClient, { socket } from "../api/feathers"
 
 interface Stats {
   clients: number
@@ -17,6 +18,55 @@ export default function Dashboard() {
   const navigate = useNavigate()
 
   useEffect(() => {
+    const setupListeners = () => {
+      const clientsService   = feathersClient.service("clients")
+      const citiesService    = feathersClient.service("cities")
+      const addressesService = feathersClient.service("addresses")
+      const usersService     = feathersClient.service("users")
+
+      const onClientCreated   = () => setStats(p => ({ ...p, clients:   p.clients   + 1 }))
+      const onClientRemoved   = () => setStats(p => ({ ...p, clients:   p.clients   - 1 }))
+      const onCityCreated     = () => setStats(p => ({ ...p, cities:    p.cities    + 1 }))
+      const onCityRemoved     = () => setStats(p => ({ ...p, cities:    p.cities    - 1 }))
+      const onAddressCreated  = () => setStats(p => ({ ...p, addresses: p.addresses + 1 }))
+      const onAddressRemoved  = () => setStats(p => ({ ...p, addresses: p.addresses - 1 }))
+      const onUserCreated     = () => setStats(p => ({ ...p, users:     p.users     + 1 }))
+      const onUserRemoved     = () => setStats(p => ({ ...p, users:     p.users     - 1 }))
+
+      clientsService.on("created",   onClientCreated)
+      clientsService.on("removed",   onClientRemoved)
+      citiesService.on("created",    onCityCreated)
+      citiesService.on("removed",    onCityRemoved)
+      addressesService.on("created", onAddressCreated)
+      addressesService.on("removed", onAddressRemoved)
+      usersService.on("created",     onUserCreated)
+      usersService.on("removed",     onUserRemoved)
+
+      return () => {
+        clientsService.off("created",   onClientCreated)
+        clientsService.off("removed",   onClientRemoved)
+        citiesService.off("created",    onCityCreated)
+        citiesService.off("removed",    onCityRemoved)
+        addressesService.off("created", onAddressCreated)
+        addressesService.off("removed", onAddressRemoved)
+        usersService.off("created",     onUserCreated)
+        usersService.off("removed",     onUserRemoved)
+      }
+    }
+
+    let cleanup: (() => void) | undefined
+
+    // ✅ Si ya está conectado suscríbete de inmediato
+    if (socket.connected) {
+      cleanup = setupListeners()
+    } else {
+      // ✅ Si no, espera la conexión
+      socket.once("connect", () => {
+        cleanup = setupListeners()
+      })
+    }
+
+    // Carga datos iniciales
     Promise.all([
       getClients(),
       getCities(),
@@ -24,12 +74,16 @@ export default function Dashboard() {
       api.get("/users").then(r => r.data)
     ]).then(([clients, cities, addresses, users]) => {
       setStats({
-        clients: clients.length,
-        cities: cities.length,
+        clients:   clients.length,
+        cities:    cities.length,
         addresses: addresses.length,
-        users: users.total ?? 0
+        users:     users.total ?? 0
       })
     }).finally(() => setLoading(false))
+
+    return () => {
+      if (cleanup) cleanup()
+    }
   }, [])
 
   const cards = [

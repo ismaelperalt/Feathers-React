@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react"
 import { getAddresses, deleteAddress } from "../api/publicService"
 import type { Address } from "../api/publicService"
+import feathersClient from "../api/feathers"
+import api from "../api/axios"  // ✅ nuevo import
 import { useAuth } from "../context/AuthContext"
 import { useNavigate } from "react-router-dom"
 
@@ -12,17 +14,53 @@ export default function Addresses() {
   const navigate = useNavigate()
 
   useEffect(() => {
+    const service = feathersClient.service("addresses")
+
+    // ✅ Fetch completo para traer city populada
+    const handleCreated = async (data: Address) => {
+      if (!data?.id) return
+      try {
+        const res = await api.get<Address>(`/addresses/${data.id}`)
+        setAddresses(prev => [...prev, res.data])
+      } catch {
+        setAddresses(prev => [...prev, data])
+      }
+    }
+
+    // ✅ Igual para patched — puede venir sin city populada
+    const handlePatched = async (data: Address) => {
+      try {
+        const res = await api.get<Address>(`/addresses/${data.id}`)
+        setAddresses(prev => prev.map(a => a.id === data.id ? res.data : a))
+      } catch {
+        setAddresses(prev => prev.map(a => a.id === data.id ? data : a))
+      }
+    }
+
+    const handleRemoved = (data: Address) => {
+      setAddresses(prev => prev.filter(a => a.id !== data.id))
+    }
+
+    service.on("created", handleCreated)
+    service.on("patched", handlePatched)
+    service.on("removed", handleRemoved)
+
     getAddresses()
       .then(setAddresses)
       .catch(() => setError("Error al cargar las direcciones"))
       .finally(() => setLoading(false))
+
+    return () => {
+      service.off("created", handleCreated)
+      service.off("patched", handlePatched)
+      service.off("removed", handleRemoved)
+    }
   }, [])
 
   const handleDelete = async (id: number) => {
     if (!confirm("¿Eliminar esta dirección?")) return
     try {
       await deleteAddress(id)
-      setAddresses(prev => prev.filter(a => a.id !== id))
     } catch {
       setError("Error al eliminar la dirección")
     }

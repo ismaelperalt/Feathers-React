@@ -37,6 +37,10 @@ export const updateCity = async (id: number, data: Partial<City>): Promise<City>
 export const deleteCity = async (id: number): Promise<void> => {
   await api.delete(`/cities/${id}`)
 }
+export const getCity = async (id: number): Promise<City> => {
+  const res = await api.get<City>(`/cities/${id}`)
+  return res.data
+}
 
 // ── Addresses ────────────────────────────────────
 export const getAddresses = async (): Promise<Address[]> => {
@@ -56,4 +60,9 @@ export const updateAddress = async (id: number, data: Partial<Address>): Promise
 
 export const deleteAddress = async (id: number): Promise<void> => {
   await api.delete(`/addresses/${id}`)
+}
+
+export const getAddress = async (id: number): Promise<Address> => {
+  const res = await api.get<Address>(`/addresses/${id}`)
+  return res.data
 }

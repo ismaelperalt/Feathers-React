@@ -5,7 +5,7 @@ const api = axios.create({
   withCredentials: true
 })
 
-// Interceptor que agrega el token automáticamente
+// ✅ sessionStorage — cada pestaña tiene su propia sesión
 api.interceptors.request.use((config) => {
   const token = sessionStorage.getItem("feathers-jwt")
   if (token) {

@@ -15,14 +15,9 @@ export default function Clients() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { isAdmin } = useAuth()
-  const navigate = useNavigate()   // ← reemplaza window.location.href
+  const navigate = useNavigate()
 
   useEffect(() => {
-    getClients()
-      .then(setClients)
-      .catch(() => setError("Error al cargar los clientes"))
-      .finally(() => setLoading(false))
-
     const service = feathersClient.service("clients") as unknown as FeathersService
 
     const handleCreated = (data: unknown) => {
@@ -38,9 +33,16 @@ export default function Clients() {
       setClients(prev => prev.filter(c => c.id !== removed.id))
     }
 
+    // ✅ 1. Primero suscribirse a los eventos
     service.on("created", handleCreated)
     service.on("patched", handlePatched)
     service.on("removed", handleRemoved)
+
+    // ✅ 2. Luego cargar datos iniciales
+    getClients()
+      .then(setClients)
+      .catch(() => setError("Error al cargar los clientes"))
+      .finally(() => setLoading(false))
 
     return () => {
       service.off("created", handleCreated)
@@ -53,6 +55,7 @@ export default function Clients() {
     if (!confirm("¿Eliminar este cliente?")) return
     try {
       await deleteClient(id)
+      // ✅ no hace falta setClients — el socket "removed" ya lo maneja
     } catch {
       setError("Error al eliminar el cliente")
     }
@@ -76,7 +79,7 @@ export default function Clients() {
         <h1 className="text-2xl font-bold text-gray-800">Clientes</h1>
         {isAdmin && (
           <button
-            onClick={() => navigate("/clients/create")}  // ← navigate
+            onClick={() => navigate("/clients/create")}
             className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
           >
             + Nuevo cliente
@@ -110,7 +113,7 @@ export default function Clients() {
                   {isAdmin && (
                     <td className="px-4 py-3 text-right space-x-2">
                       <button
-                        onClick={() => navigate(`/clients/edit/${client.id}`)}  // ← navigate
+                        onClick={() => navigate(`/clients/edit/${client.id}`)}
                         className="text-blue-600 hover:underline text-xs font-medium"
                       >
                         Editar

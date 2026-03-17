@@ -24,7 +24,7 @@ export default function AppRouter() {
 
         {/* Pública */}
         <Route path="/login" element={
-          user ? <Navigate to="/clients" replace /> : <Login />
+          user ? <Navigate to="/dashboard" replace /> : <Login />
         } />
 
         <Route path="/register" element={
@@ -39,6 +39,12 @@ export default function AppRouter() {
           <PrivateRoute onlyAdmin>
             <Layout><UserForm /></Layout>
           </PrivateRoute>
+        } />
+        <Route path="/users/edit/:id" element={<UserForm />} />
+
+        {/* Solo admin */}
+        <Route path="/dashboard" element={
+          <PrivateRoute onlyAdmin><Layout><Dashboard /></Layout></PrivateRoute>
         } />
 
         {/* Clientes */}
@@ -74,10 +80,7 @@ export default function AppRouter() {
           <PrivateRoute onlyAdmin><Layout><AddressForm /></Layout></PrivateRoute>
         } />
 
-        {/* Solo admin */}
-        <Route path="/dashboard" element={
-          <PrivateRoute onlyAdmin><Layout><Dashboard /></Layout></PrivateRoute>
-        } />
+        
 
         {/* Default */}
         <Route path="*" element={<Navigate to="/login" replace />} />

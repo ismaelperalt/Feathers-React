@@ -1,8 +1,14 @@
 import { useEffect, useState } from "react"
 import { getCities, deleteCity } from "../api/publicService"
 import type { City } from "../api/publicService"
+import feathersClient from "../api/feathers"
 import { useAuth } from "../context/AuthContext"
 import { useNavigate } from "react-router-dom"
+
+interface FeathersService {
+  on(event: string, handler: (data: unknown) => void): void
+  off(event: string, handler: (data: unknown) => void): void
+}
 
 export default function Cities() {
   const [cities, setCities] = useState<City[]>([])
@@ -12,17 +18,44 @@ export default function Cities() {
   const navigate = useNavigate()
 
   useEffect(() => {
+    const service = feathersClient.service("cities") as unknown as FeathersService
+
+    const handleCreated = (data: unknown) => {
+      const newCity = data as City
+      if (newCity?.id) setCities(prev => [...prev, newCity])
+    }
+    const handlePatched = (data: unknown) => {
+      const updated = data as City
+      setCities(prev => prev.map(c => c.id === updated.id ? updated : c))
+    }
+    const handleRemoved = (data: unknown) => {
+      const removed = data as City
+      setCities(prev => prev.filter(c => c.id !== removed.id))
+    }
+
+    // ✅ 1. Primero suscribirse
+    service.on("created", handleCreated)
+    service.on("patched", handlePatched)
+    service.on("removed", handleRemoved)
+
+    // ✅ 2. Luego cargar datos iniciales
     getCities()
       .then(setCities)
       .catch(() => setError("Error al cargar las ciudades"))
       .finally(() => setLoading(false))
+
+    return () => {
+      service.off("created", handleCreated)
+      service.off("patched", handlePatched)
+      service.off("removed", handleRemoved)
+    }
   }, [])
 
   const handleDelete = async (id: number) => {
     if (!confirm("¿Eliminar esta ciudad?")) return
     try {
       await deleteCity(id)
-      setCities(prev => prev.filter(c => c.id !== id))
+      // ✅ sin setClients manual — el socket "removed" ya lo maneja
     } catch {
       setError("Error al eliminar la ciudad")
     }

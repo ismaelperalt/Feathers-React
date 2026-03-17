@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { getUsers, updateUserRole, deleteUser } from "../api/userService"
 import type { User } from "../api/userService"
+import feathersClient from "../api/feathers"
 import { useAuth } from "../context/AuthContext"
 import { useNavigate } from "react-router-dom"
 
@@ -12,16 +13,37 @@ export default function Users() {
   const navigate = useNavigate()
 
   useEffect(() => {
+    const service = feathersClient.service("users")
+
+    const handleCreated = (data: User) => {
+      if (data?.id) setUsers(prev => [...prev, data])
+    }
+    const handlePatched = (data: User) => {
+      setUsers(prev => prev.map(u => u.id === data.id ? data : u))
+    }
+    const handleRemoved = (data: User) => {
+      setUsers(prev => prev.filter(u => u.id !== data.id))
+    }
+
+    service.on("created", handleCreated)
+    service.on("patched", handlePatched)
+    service.on("removed", handleRemoved)
+
     getUsers()
       .then(setUsers)
       .catch(() => setError("Error al cargar los usuarios"))
       .finally(() => setLoading(false))
+
+    return () => {
+      service.off("created", handleCreated)
+      service.off("patched", handlePatched)
+      service.off("removed", handleRemoved)
+    }
   }, [])
 
   const handleRoleChange = async (id: number, role: string) => {
     try {
-      const updated = await updateUserRole(id, role)
-      setUsers(prev => prev.map(u => u.id === id ? { ...u, role: updated.role } : u))
+      await updateUserRole(id, role)
     } catch {
       setError("Error al actualizar el rol")
     }
@@ -31,7 +53,6 @@ export default function Users() {
     if (!confirm("¿Eliminar este usuario?")) return
     try {
       await deleteUser(id)
-      setUsers(prev => prev.filter(u => u.id !== id))
     } catch {
       setError("Error al eliminar el usuario")
     }
@@ -99,14 +120,23 @@ export default function Users() {
                 <td className="px-4 py-3 text-gray-500">
                   {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}
                 </td>
-                <td className="px-4 py-3 text-right">
+                <td className="px-4 py-3 text-right space-x-2">
                   {u.id !== currentUser?.id && (
-                    <button
-                      onClick={() => handleDelete(u.id)}
-                      className="text-red-500 hover:underline text-xs font-medium"
-                    >
-                      Eliminar
-                    </button>
+                    <>
+                      {/* ✅ Botón editar agregado */}
+                      <button
+                        onClick={() => navigate(`/users/edit/${u.id}`)}
+                        className="text-blue-600 hover:underline text-xs font-medium"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => handleDelete(u.id)}
+                        className="text-red-500 hover:underline text-xs font-medium"
+                      >
+                        Eliminar
+                      </button>
+                    </>
                   )}
                 </td>
               </tr>

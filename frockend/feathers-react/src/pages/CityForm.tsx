@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { createCity, updateCity, getCities } from "../api/publicService"
-import type { City } from "../api/publicService"
+import { createCity, updateCity, getCity } from "../api/publicService"
 
 export default function CityForm() {
   const { id } = useParams()
@@ -13,22 +12,28 @@ export default function CityForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Si es editar, carga los datos
+  // ✅ Carga solo la ciudad necesaria, no todas
   useEffect(() => {
     if (!isEdit) return
-    getCities().then(cities => {
-      const city = cities.find((c: City) => c.id === Number(id))
-      if (city) {
+    getCity(Number(id))
+      .then(city => {
         setName(city.name)
         setState(city.state ?? "")
-      }
-    })
+      })
+      .catch(() => setError("Error al cargar la ciudad"))
   }, [id])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
     setError(null)
+
+    // ✅ Validación antes de llamar al servidor
+    if (!name.trim()) {
+      setError("El nombre de la ciudad es obligatorio")
+      return
+    }
+
+    setLoading(true)
     try {
       if (isEdit) {
         await updateCity(Number(id), { name, state })
@@ -65,43 +70,57 @@ export default function CityForm() {
 
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
+
+          {/* Nombre */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nombre <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               value={name}
-              onChange={e => setName(e.target.value)}
+              onChange={e => { setName(e.target.value); setError(null) }}
               placeholder="Ej: Cuenca"
-              required
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              className={`w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none 
+                focus:ring-2 focus:border-transparent transition
+                ${!name.trim() && error ? "border-red-400 focus:ring-red-400" : "border-gray-300 focus:ring-blue-500"}`}
             />
           </div>
+
+          {/* Provincia */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Provincia</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Provincia
+            </label>
             <input
               type="text"
               value={state}
               onChange={e => setState(e.target.value)}
               placeholder="Ej: Azuay"
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm 
+                focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
             />
           </div>
+
           <div className="flex gap-3 pt-2">
             <button
               type="button"
               onClick={() => navigate("/cities")}
-              className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+              className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm 
+                font-medium text-gray-700 hover:bg-gray-50 transition"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-medium py-2.5 rounded-lg text-sm transition"
+              className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 
+                text-white font-medium py-2.5 rounded-lg text-sm transition"
             >
               {loading ? "Guardando..." : isEdit ? "Actualizar" : "Crear"}
             </button>
           </div>
+
         </form>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { createAddress, updateAddress, getAddresses, getCities } from "../api/publicService"
+import { createAddress, updateAddress, getAddress, getCities } from "../api/publicService"
 import type { City } from "../api/publicService"
 
 export default function AddressForm() {
@@ -17,24 +17,36 @@ export default function AddressForm() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // ✅ Carga ciudades para el select
     getCities().then(setCities)
 
+    // ✅ Carga solo la dirección necesaria
     if (!isEdit) return
-    getAddresses().then(addresses => {
-      const address = addresses.find(a => a.id === Number(id))
-      if (address) {
+    getAddress(Number(id))
+      .then(address => {
         setStreet(address.street)
         setNumber(address.number ?? "")
         setReference(address.reference ?? "")
         setCityId(address.city_id ?? "")
-      }
-    })
+      })
+      .catch(() => setError("Error al cargar la dirección"))
   }, [id])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
     setError(null)
+
+    // ✅ Validación antes de llamar al servidor
+    if (!street.trim()) {
+      setError("La calle es obligatoria")
+      return
+    }
+    if (!cityId) {
+      setError("Debes seleccionar una ciudad")
+      return
+    }
+
+    setLoading(true)
     try {
       const data = { street, number, reference, city_id: Number(cityId) }
       if (isEdit) {
@@ -53,7 +65,10 @@ export default function AddressForm() {
   return (
     <div className="p-6 max-w-lg mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => navigate("/addresses")} className="text-gray-400 hover:text-gray-600 transition">
+        <button
+          onClick={() => navigate("/addresses")}
+          className="text-gray-400 hover:text-gray-600 transition"
+        >
           ← Volver
         </button>
         <h1 className="text-2xl font-bold text-gray-800">
@@ -69,17 +84,24 @@ export default function AddressForm() {
 
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
+
+          {/* Calle */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Calle</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Calle <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               value={street}
-              onChange={e => setStreet(e.target.value)}
+              onChange={e => { setStreet(e.target.value); setError(null) }}
               placeholder="Ej: Av. Loja"
-              required
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              className={`w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none
+                focus:ring-2 focus:border-transparent transition
+                ${!street.trim() && error ? "border-red-400 focus:ring-red-400" : "border-gray-300 focus:ring-blue-500"}`}
             />
           </div>
+
+          {/* Número */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Número</label>
             <input
@@ -90,6 +112,8 @@ export default function AddressForm() {
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
             />
           </div>
+
+          {/* Referencia */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Referencia</label>
             <input
@@ -100,13 +124,18 @@ export default function AddressForm() {
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
             />
           </div>
+
+          {/* Ciudad */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Ciudad <span className="text-red-500">*</span>
+            </label>
             <select
               value={cityId}
-              onChange={e => setCityId(Number(e.target.value))}
-              required
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              onChange={e => { setCityId(Number(e.target.value)); setError(null) }}
+              className={`w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none
+                focus:ring-2 focus:border-transparent transition
+                ${!cityId && error ? "border-red-400 focus:ring-red-400" : "border-gray-300 focus:ring-blue-500"}`}
             >
               <option value="">Selecciona una ciudad</option>
               {cities.map(city => (
@@ -114,6 +143,7 @@ export default function AddressForm() {
               ))}
             </select>
           </div>
+
           <div className="flex gap-3 pt-2">
             <button
               type="button"
@@ -130,6 +160,7 @@ export default function AddressForm() {
               {loading ? "Guardando..." : isEdit ? "Actualizar" : "Crear"}
             </button>
           </div>
+
         </form>
       </div>
     </div>
