@@ -5,10 +5,21 @@ import feathersClient from "../../api/feathers"
 import { useAuth } from "../../context/AuthContext"
 import { useNavigate } from "react-router-dom"
 
+// ✅ Colores para avatar
+const avatarColor = (name: string) => {
+  const colors = [
+    "bg-blue-500", "bg-emerald-500", "bg-purple-500",
+    "bg-amber-500", "bg-rose-500", "bg-cyan-500",
+    "bg-indigo-500", "bg-pink-500"
+  ]
+  return colors[name.charCodeAt(0) % colors.length]
+}
+
 export default function Users() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [search, setSearch] = useState("") // ✅ buscador
   const { user: currentUser } = useAuth()
   const navigate = useNavigate()
 
@@ -18,9 +29,11 @@ export default function Users() {
     const handleCreated = (data: User) => {
       if (data?.id) setUsers(prev => [...prev, data])
     }
+
     const handlePatched = (data: User) => {
       setUsers(prev => prev.map(u => u.id === data.id ? data : u))
     }
+
     const handleRemoved = (data: User) => {
       setUsers(prev => prev.filter(u => u.id !== data.id))
     }
@@ -58,6 +71,12 @@ export default function Users() {
     }
   }
 
+  // ✅ filtro por email o rol
+  const filtered = users.filter(u =>
+    u.email.toLowerCase().includes(search.toLowerCase()) ||
+    u.role.toLowerCase().includes(search.toLowerCase())
+  )
+
   if (loading) return (
     <div className="flex justify-center items-center h-64">
       <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
@@ -72,78 +91,145 @@ export default function Users() {
 
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Usuarios</h1>
+
+      {/* ✅ Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Usuarios</h1>
+          <p className="text-sm text-gray-400 mt-0.5">{users.length} registrados</p>
+        </div>
+
         <button
           onClick={() => navigate("/users/create")}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
+          className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2 self-start sm:self-auto"
         >
-          + Nuevo usuario
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Nuevo usuario
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
-        <table className="w-full text-sm text-left">
-          <thead className="bg-gray-50 text-gray-600 uppercase text-xs">
-            <tr>
-              <th className="px-4 py-3">Email</th>
-              <th className="px-4 py-3">Rol</th>
-              <th className="px-4 py-3">Creado</th>
-              <th className="px-4 py-3 text-right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {users.map(u => (
-              <tr key={u.id} className="hover:bg-gray-50 transition">
-                <td className="px-4 py-3 font-medium text-gray-800">
-                  {u.email}
-                  {u.id === currentUser?.id && (
-                    <span className="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
-                      Tú
-                    </span>
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  {u.id === currentUser?.id ? (
-                    <span className="text-gray-500 capitalize">{u.role}</span>
-                  ) : (
-                    <select
-                      value={u.role}
-                      onChange={e => handleRoleChange(u.id, e.target.value)}
-                      className="border border-gray-300 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="user">user</option>
-                      <option value="admin">admin</option>
-                    </select>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-gray-500">
-                  {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}
-                </td>
-                <td className="px-4 py-3 text-right space-x-2">
-                  {u.id !== currentUser?.id && (
-                    <>
-                      {/* ✅ Botón editar agregado */}
-                      <button
-                        onClick={() => navigate(`/users/edit/${u.id}`)}
-                        className="text-blue-600 hover:underline text-xs font-medium"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => handleDelete(u.id)}
-                        className="text-red-500 hover:underline text-xs font-medium"
-                      >
-                        Eliminar
-                      </button>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* ✅ Buscador */}
+      <div className="relative mb-5">
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+        </svg>
+
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Buscar por email o rol..."
+          className="w-full sm:w-80 pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+        />
+
+        {search && (
+          <button
+            onClick={() => setSearch("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          >
+            ✕
+          </button>
+        )}
       </div>
+
+      {/* ✅ Estado vacío */}
+      {filtered.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
+          <p className="text-gray-500 font-medium">
+            {search ? `Sin resultados para "${search}"` : "No hay usuarios"}
+          </p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+
+          <table className="w-full text-sm text-left">
+            <thead className="bg-gray-50 text-gray-500 uppercase text-xs border-b border-gray-200">
+              <tr>
+                <th className="px-4 py-3">Usuario</th>
+                <th className="px-4 py-3">Rol</th>
+                <th className="px-4 py-3">Creado</th>
+                <th className="px-4 py-3 text-right">Acciones</th>
+              </tr>
+            </thead>
+
+            <tbody className="divide-y divide-gray-100">
+              {filtered.map(u => (
+                <tr key={u.id} className="hover:bg-gray-50 transition">
+
+                  {/* ✅ Avatar + email */}
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full ${avatarColor(u.email)} flex items-center justify-center`}>
+                        <span className="text-white text-xs font-bold">
+                          {u.email.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col">
+                        <span className="font-medium text-gray-800">{u.email}</span>
+
+                        {u.id === currentUser?.id && (
+                          <span className="text-xs text-blue-500">Tú</span>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* ✅ Rol */}
+                  <td className="px-4 py-3">
+                    {u.id === currentUser?.id ? (
+                      <span className="text-gray-500 capitalize">{u.role}</span>
+                    ) : (
+                      <select
+                        value={u.role}
+                        onChange={e => handleRoleChange(u.id, e.target.value)}
+                        className="border border-gray-300 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="user">user</option>
+                        <option value="admin">admin</option>
+                      </select>
+                    )}
+                  </td>
+
+                  {/* ✅ Fecha */}
+                  <td className="px-4 py-3 text-gray-500">
+                    {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}
+                  </td>
+
+                  {/* ✅ Acciones */}
+                  <td className="px-4 py-3 text-right space-x-2">
+                    {u.id !== currentUser?.id && (
+                      <>
+                        <button
+                          onClick={() => navigate(`/users/edit/${u.id}`)}
+                          className="text-blue-600 hover:underline text-xs font-medium"
+                        >
+                          Editar
+                        </button>
+
+                        <button
+                          onClick={() => handleDelete(u.id)}
+                          className="text-red-500 hover:underline text-xs font-medium"
+                        >
+                          Eliminar
+                        </button>
+                      </>
+                    )}
+                  </td>
+
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* ✅ Footer */}
+          <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-xs text-gray-400">
+            Mostrando {filtered.length} de {users.length} usuarios
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -173,10 +173,10 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
 
-      {/* ✅ Sección de bienvenida */}
+      {/* Sección de bienvenida */}
       <div className="bg-gradient-to-r from-gray-900 to-gray-700 rounded-2xl px-6 py-8 flex items-center justify-between shadow-md">
         <div>
-          <p className="text-gray-400 text-sm mb-1">Bienvenido de nuevo 👋</p>
+          <p className="text-gray-400 text-sm mb-1">Bienvenido de nuevo </p>
           <h1 className="text-2xl sm:text-3xl font-bold text-white">
             {user?.email?.split("@")[0]}
           </h1>
@@ -192,7 +192,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ✅ Cards con gradiente e iconos */}
+      {/*  Cards con gradiente e iconos */}
       <div>
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Resumen general</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -214,7 +214,7 @@ export default function Dashboard() {
               <p className="text-gray-500 text-xs font-medium uppercase tracking-wide">{card.label}</p>
               <p className="text-3xl font-bold text-gray-800 mt-1">{card.value}</p>
 
-              {/* ✅ Flecha indicador */}
+              {/*  Flecha indicador */}
               <div className="flex items-center gap-1 mt-3 text-xs font-medium text-gray-400 group-hover:text-blue-500 transition">
                 <span>Ver todos</span>
                 <svg className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -226,7 +226,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ✅ Accesos rápidos mejorados */}
+      {/* Accesos rápidos mejorados */}
       <div>
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Accesos rápidos</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -240,7 +240,7 @@ export default function Dashboard() {
                 {item.icon}
               </div>
               <span>{item.label}</span>
-              {/* ✅ Flecha */}
+              {/*  Flecha */}
               <svg className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>
