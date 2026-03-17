@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { createAddress, updateAddress, getAddress, getCities } from "../../api/publicService"
+import feathersClient from "../../api/feathers"
 import type { City } from "../../api/publicService"
 
 export default function AddressForm() {
@@ -17,26 +17,32 @@ export default function AddressForm() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Carga ciudades para el select
-    getCities().then(setCities)
+    const addressService = feathersClient.service("addresses")
+    const cityService = feathersClient.service("cities")
 
-    //  Carga solo la dirección necesaria
+    // ✅ Cargar ciudades (ANTES getCities)
+    cityService.find()
+      .then((res: any) => setCities(res.data))
+      .catch(() => setError("Error al cargar ciudades"))
+
+    // ✅ Cargar dirección (ANTES getAddress)
     if (!isEdit) return
-    getAddress(Number(id))
-      .then(address => {
+
+    addressService.get(Number(id))
+      .then((address: any) => {
         setStreet(address.street)
         setNumber(address.number ?? "")
         setReference(address.reference ?? "")
         setCityId(address.city_id ?? "")
       })
       .catch(() => setError("Error al cargar la dirección"))
-  }, [id])
+  }, [id, isEdit])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
 
-    //  Validación antes de llamar al servidor
+    // ✅ Validaciones (igual que tenías)
     if (!street.trim()) {
       setError("La calle es obligatoria")
       return
@@ -47,13 +53,24 @@ export default function AddressForm() {
     }
 
     setLoading(true)
+
     try {
-      const data = { street, number, reference, city_id: Number(cityId) }
-      if (isEdit) {
-        await updateAddress(Number(id), data)
-      } else {
-        await createAddress(data)
+      const data = {
+        street,
+        number,
+        reference,
+        city_id: Number(cityId)
       }
+
+      const service = feathersClient.service("addresses")
+
+      // ✅ create / patch (ANTES createAddress/updateAddress)
+      if (isEdit) {
+        await service.patch(Number(id), data)
+      } else {
+        await service.create(data)
+      }
+
       navigate("/addresses")
     } catch {
       setError("Error al guardar la dirección")

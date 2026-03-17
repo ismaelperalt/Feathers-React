@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react"
-import { getCities, deleteCity } from "../../api/publicService"
 import type { City } from "../../api/publicService"
 import feathersClient from "../../api/feathers"
 import { useAuth } from "../../context/AuthContext"
@@ -8,6 +7,8 @@ import { useNavigate } from "react-router-dom"
 interface FeathersService {
   on(event: string, handler: (data: unknown) => void): void
   off(event: string, handler: (data: unknown) => void): void
+  find(): Promise<any>
+  remove(id: number): Promise<any>
 }
 
 // ✅ Colores para avatares según inicial
@@ -24,7 +25,7 @@ export default function Cities() {
   const [cities, setCities] = useState<City[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [search, setSearch] = useState("") // ✅ buscador
+  const [search, setSearch] = useState("")
   const { isAdmin } = useAuth()
   const navigate = useNavigate()
 
@@ -35,10 +36,12 @@ export default function Cities() {
       const newCity = data as City
       if (newCity?.id) setCities(prev => [...prev, newCity])
     }
+
     const handlePatched = (data: unknown) => {
       const updated = data as City
       setCities(prev => prev.map(c => c.id === updated.id ? updated : c))
     }
+
     const handleRemoved = (data: unknown) => {
       const removed = data as City
       setCities(prev => prev.filter(c => c.id !== removed.id))
@@ -48,8 +51,9 @@ export default function Cities() {
     service.on("patched", handlePatched)
     service.on("removed", handleRemoved)
 
-    getCities()
-      .then(setCities)
+    // ✅ Reemplazo de getCities()
+    service.find()
+      .then((res: any) => setCities(res.data))
       .catch(() => setError("Error al cargar las ciudades"))
       .finally(() => setLoading(false))
 
@@ -63,7 +67,9 @@ export default function Cities() {
   const handleDelete = async (id: number) => {
     if (!confirm("¿Eliminar esta ciudad?")) return
     try {
-      await deleteCity(id)
+      // ✅ Reemplazo de deleteCity()
+      const service = feathersClient.service("cities") as unknown as FeathersService
+      await service.remove(id)
     } catch {
       setError("Error al eliminar la ciudad")
     }
@@ -94,7 +100,6 @@ export default function Cities() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Ciudades</h1>
-          {/* ✅ Contador */}
           <p className="text-sm text-gray-400 mt-0.5">{cities.length} registradas</p>
         </div>
         {isAdmin && (
@@ -110,7 +115,7 @@ export default function Cities() {
         )}
       </div>
 
-      {/* ✅ Buscador */}
+      {/* Buscador */}
       <div className="relative mb-5">
         <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
@@ -139,7 +144,7 @@ export default function Cities() {
         <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21" />
             </svg>
           </div>
           <p className="text-gray-500 font-medium">
@@ -165,10 +170,9 @@ export default function Cities() {
               {filtered.map(city => (
                 <tr key={city.id} className="hover:bg-gray-50 transition">
 
-                  {/* ✅ Avatar con inicial */}
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full ${avatarColor(city.name ?? "?")} flex items-center justify-center flex-shrink-0`}>
+                      <div className={`w-8 h-8 rounded-full ${avatarColor(city.name ?? "?")} flex items-center justify-center`}>
                         <span className="text-white text-xs font-bold">
                           {city.name?.charAt(0).toUpperCase() ?? "?"}
                         </span>
@@ -177,13 +181,9 @@ export default function Cities() {
                     </div>
                   </td>
 
-                  {/* ✅ Badge de provincia */}
                   <td className="px-4 py-3">
                     {city.state ? (
                       <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-medium px-2.5 py-1 rounded-full border border-emerald-100">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
-                        </svg>
                         {city.state}
                       </span>
                     ) : (
@@ -212,7 +212,6 @@ export default function Cities() {
             </tbody>
           </table>
 
-          {/* ✅ Footer con conteo */}
           <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-xs text-gray-400">
             Mostrando {filtered.length} de {cities.length} ciudades
           </div>

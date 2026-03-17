@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react"
-import { getClients, deleteClient } from "../../api/clientService"
 import type { Client } from "../../api/clientService"
 import feathersClient from "../../api/feathers"
 import { useAuth } from "../../context/AuthContext"
 import { useNavigate } from "react-router-dom"
 
+
 interface FeathersService {
   on(event: string, handler: (data: unknown) => void): void
   off(event: string, handler: (data: unknown) => void): void
+  find(): Promise<any>
+  remove(id: number): Promise<any>
 }
 
-// ✅ Colores para avatares según inicial
+// Colores para avatares según inicial
 const avatarColor = (name: string) => {
   const colors = [
     "bg-blue-500", "bg-emerald-500", "bg-purple-500",
@@ -24,7 +26,7 @@ export default function Clients() {
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [search, setSearch] = useState("") // ✅ buscador
+  const [search, setSearch] = useState("")
   const { isAdmin } = useAuth()
   const navigate = useNavigate()
 
@@ -35,10 +37,12 @@ export default function Clients() {
       const newClient = data as Client
       if (newClient?.id) setClients(prev => [...prev, newClient])
     }
+
     const handlePatched = (data: unknown) => {
       const updated = data as Client
       setClients(prev => prev.map(c => c.id === updated.id ? updated : c))
     }
+
     const handleRemoved = (data: unknown) => {
       const removed = data as Client
       setClients(prev => prev.filter(c => c.id !== removed.id))
@@ -48,8 +52,9 @@ export default function Clients() {
     service.on("patched", handlePatched)
     service.on("removed", handleRemoved)
 
-    getClients()
-      .then(setClients)
+    //  Reemplazo de getClients()
+    service.find()
+      .then((res: any) => setClients(res.data))
       .catch(() => setError("Error al cargar los clientes"))
       .finally(() => setLoading(false))
 
@@ -63,13 +68,15 @@ export default function Clients() {
   const handleDelete = async (id: number) => {
     if (!confirm("¿Eliminar este cliente?")) return
     try {
-      await deleteClient(id)
+      //  Reemplazo de deleteClient()
+      const service = feathersClient.service("clients") as unknown as FeathersService
+      await service.remove(id)
     } catch {
       setError("Error al eliminar el cliente")
     }
   }
 
-  // ✅ Filtro por nombre o email
+  // Filtro por nombre o email
   const filtered = clients.filter(c =>
     c.name?.toLowerCase().includes(search.toLowerCase()) ||
     c.email?.toLowerCase().includes(search.toLowerCase())
@@ -86,7 +93,6 @@ export default function Clients() {
       {error}
     </div>
   )
-
   return (
     <div className="p-6">
 
@@ -109,7 +115,7 @@ export default function Clients() {
         )}
       </div>
 
-      {/* ✅ Buscador */}
+      {/* Buscador */}
       <div className="relative mb-5">
         <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
@@ -121,7 +127,7 @@ export default function Clients() {
           placeholder="Buscar por nombre o email..."
           className="w-full sm:w-80 pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
         />
-        {/* ✅ Limpiar búsqueda */}
+        {/* Limpiar búsqueda */}
         {search && (
           <button
             onClick={() => setSearch("")}
@@ -156,8 +162,8 @@ export default function Clients() {
           <table className="w-full text-sm text-left">
             <thead className="bg-gray-50 text-gray-500 uppercase text-xs border-b border-gray-200">
               <tr>
-                <th className="px-4 py-3">Cliente</th>
-                <th className="px-4 py-3">Email</th>
+                <th className="px-4 py-3">Usuario</th>
+                <th className="px-4 py-3">Nombre</th>
                 <th className="px-4 py-3">Teléfono</th>
                 <th className="px-4 py-3">Dirección</th>
                 <th className="px-4 py-3">Ciudad</th>
@@ -168,7 +174,18 @@ export default function Clients() {
               {filtered.map(client => (
                 <tr key={client.id} className="hover:bg-gray-50 transition">
 
-                  {/* ✅ Avatar con inicial */}
+                  {/* Avatar con inicial */}
+
+                  <td className="px-4 py-3 text-gray-600"><div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-full ${avatarColor(client.email ?? "?")} flex items-center justify-center flex-shrink-0`}>
+                      <span className="text-white text-xs font-bold">
+                        {client.email?.charAt(0).toUpperCase() ?? "?"}
+                      </span>
+                    </div>
+                    <span className="font-medium text-gray-800">{client.email}</span>
+                  </div></td>
+
+
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full ${avatarColor(client.name ?? "?")} flex items-center justify-center flex-shrink-0`}>
@@ -180,11 +197,10 @@ export default function Clients() {
                     </div>
                   </td>
 
-                  <td className="px-4 py-3 text-gray-600">{client.email}</td>
                   <td className="px-4 py-3 text-gray-600">{client.phone ?? "—"}</td>
                   <td className="px-4 py-3 text-gray-600">{client.address?.street ?? "—"}</td>
 
-                  {/* ✅ Badge de ciudad */}
+                  {/*  Badge de ciudad */}
                   <td className="px-4 py-3">
                     {client.address?.city?.name ? (
                       <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs font-medium px-2.5 py-1 rounded-full border border-blue-100">
