@@ -1,7 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react"
 import type { ReactNode } from "react"
-import { login as loginService, logout as logoutService } from "../api/authService"
-import api from "../api/axios"
 import feathersClient from "../api/feathers"
 
 interface User {
@@ -33,22 +31,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const payload = JSON.parse(atob(token.split(".")[1]))
-
       const now = Math.floor(Date.now() / 1000)
+
+      // Token expirado → limpiar
       if (payload.exp && payload.exp < now) {
         sessionStorage.removeItem("feathers-jwt")
         setLoading(false)
         return
       }
 
-      api.get(`/users/${payload.sub}`)
-        .then(res => setUser(res.data))
-        .catch(() => sessionStorage.removeItem("feathers-jwt"))
-        .finally(() => setLoading(false))
-
+      
       feathersClient.authenticate({ strategy: "jwt", accessToken: token })
-        .then(() => console.log("Socket autenticado ✓"))
-        .catch(err => console.warn("Socket sin autenticar:", err))
+        .then(async () => {
+          const userData = await feathersClient.service("users").get(payload.sub)
+          setUser(userData as User)
+        })
+        .catch(() => {
+          sessionStorage.removeItem("feathers-jwt")
+        })
+        .finally(() => setLoading(false))
 
     } catch {
       sessionStorage.removeItem("feathers-jwt")
@@ -56,23 +57,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // ✅ Escucha cambios de rol en tiempo real
+  // Escucha cambios de rol y eliminación en tiempo real
   useEffect(() => {
     if (!user) return
 
     const service = feathersClient.service("users")
 
     const handlePatched = (data: User) => {
-      // Solo actualiza si es el usuario actualmente logueado
       if (data.id === user.id) {
         setUser(prev => prev ? { ...prev, ...data } : prev)
       }
     }
 
     const handleRemoved = (data: User) => {
-      // Si eliminan al usuario logueado, forzar logout
       if (data.id === user.id) {
-        logoutService()
         feathersClient.logout()
         sessionStorage.removeItem("feathers-jwt")
         setUser(null)
@@ -87,31 +85,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       service.off("patched", handlePatched)
       service.off("removed", handleRemoved)
     }
-  }, [user?.id]) // ✅ solo se re-suscribe si cambia el id del usuario
+  }, [user?.id])
 
+  
   const login = async (email: string, password: string): Promise<User> => {
     setLoading(true)
     try {
-      const response = await loginService(email, password)
-      const loggedUser = response.user as User
-      setUser(loggedUser)
-
-      await feathersClient.authenticate({
-        strategy: "jwt",
-        accessToken: response.accessToken
+      const response = await feathersClient.authenticate({
+        strategy: "local",
+        email,
+        password
       })
 
+      const loggedUser = response.user as User
+      setUser(loggedUser)
       return loggedUser
     } finally {
       setLoading(false)
     }
   }
 
+ 
   const logout = async () => {
-    await logoutService()
     await feathersClient.logout()
-    setUser(null)
     sessionStorage.removeItem("feathers-jwt")
+    setUser(null)
   }
 
   return (
@@ -120,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       login,
       logout,
-      isAdmin: user?.role === 'admin'
+      isAdmin: user?.role === "admin"
     }}>
       {children}
     </AuthContext.Provider>

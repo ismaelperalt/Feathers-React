@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react"
-import { getUsers, updateUserRole, deleteUser } from "../../api/userService"
-import type { User } from "../../api/userService"
 import feathersClient from "../../api/feathers"
 import { useAuth } from "../../context/AuthContext"
 import { useNavigate } from "react-router-dom"
 
-// ✅ Colores para avatar
+// Interfaz local — ya no depende de userService
+interface User {
+  id: number
+  email: string
+  role: string
+  createdAt?: string
+}
+
 const avatarColor = (name: string) => {
   const colors = [
     "bg-blue-500", "bg-emerald-500", "bg-purple-500",
@@ -19,7 +24,7 @@ export default function Users() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [search, setSearch] = useState("") // ✅ buscador
+  const [search, setSearch] = useState("")
   const { user: currentUser } = useAuth()
   const navigate = useNavigate()
 
@@ -29,11 +34,9 @@ export default function Users() {
     const handleCreated = (data: User) => {
       if (data?.id) setUsers(prev => [...prev, data])
     }
-
     const handlePatched = (data: User) => {
       setUsers(prev => prev.map(u => u.id === data.id ? data : u))
     }
-
     const handleRemoved = (data: User) => {
       setUsers(prev => prev.filter(u => u.id !== data.id))
     }
@@ -42,8 +45,9 @@ export default function Users() {
     service.on("patched", handlePatched)
     service.on("removed", handleRemoved)
 
-    getUsers()
-      .then(setUsers)
+    //  Carga inicial por socket — reemplazo de getUsers()
+    service.find()
+      .then((res: any) => setUsers(res.data))
       .catch(() => setError("Error al cargar los usuarios"))
       .finally(() => setLoading(false))
 
@@ -54,24 +58,25 @@ export default function Users() {
     }
   }, [])
 
+  // Por socket — reemplazo de updateUserRole()
   const handleRoleChange = async (id: number, role: string) => {
     try {
-      await updateUserRole(id, role)
+      await feathersClient.service("users").patch(id, { role })
     } catch {
       setError("Error al actualizar el rol")
     }
   }
 
+  // Por socket — reemplazo de deleteUser()
   const handleDelete = async (id: number) => {
     if (!confirm("¿Eliminar este usuario?")) return
     try {
-      await deleteUser(id)
+      await feathersClient.service("users").remove(id)
     } catch {
       setError("Error al eliminar el usuario")
     }
   }
 
-  // ✅ filtro por email o rol
   const filtered = users.filter(u =>
     u.email.toLowerCase().includes(search.toLowerCase()) ||
     u.role.toLowerCase().includes(search.toLowerCase())
@@ -91,14 +96,11 @@ export default function Users() {
 
   return (
     <div className="p-6">
-
-      {/* ✅ Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Usuarios</h1>
           <p className="text-sm text-gray-400 mt-0.5">{users.length} registrados</p>
         </div>
-
         <button
           onClick={() => navigate("/users/create")}
           className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2 self-start sm:self-auto"
@@ -110,12 +112,10 @@ export default function Users() {
         </button>
       </div>
 
-      {/* ✅ Buscador */}
       <div className="relative mb-5">
         <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
         </svg>
-
         <input
           type="text"
           value={search}
@@ -123,18 +123,11 @@ export default function Users() {
           placeholder="Buscar por email o rol..."
           className="w-full sm:w-80 pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
         />
-
         {search && (
-          <button
-            onClick={() => setSearch("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-          >
-            ✕
-          </button>
+          <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">✕</button>
         )}
       </div>
 
-      {/* ✅ Estado vacío */}
       {filtered.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
           <p className="text-gray-500 font-medium">
@@ -143,7 +136,6 @@ export default function Users() {
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
-
           <table className="w-full text-sm text-left">
             <thead className="bg-gray-50 text-gray-500 uppercase text-xs border-b border-gray-200">
               <tr>
@@ -153,31 +145,20 @@ export default function Users() {
                 <th className="px-4 py-3 text-right">Acciones</th>
               </tr>
             </thead>
-
             <tbody className="divide-y divide-gray-100">
               {filtered.map(u => (
                 <tr key={u.id} className="hover:bg-gray-50 transition">
-
-                  {/* ✅ Avatar + email */}
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full ${avatarColor(u.email)} flex items-center justify-center`}>
-                        <span className="text-white text-xs font-bold">
-                          {u.email.charAt(0).toUpperCase()}
-                        </span>
+                        <span className="text-white text-xs font-bold">{u.email.charAt(0).toUpperCase()}</span>
                       </div>
-
                       <div className="flex flex-col">
                         <span className="font-medium text-gray-800">{u.email}</span>
-
-                        {u.id === currentUser?.id && (
-                          <span className="text-xs text-blue-500">Tú</span>
-                        )}
+                        {u.id === currentUser?.id && <span className="text-xs text-blue-500">Tú</span>}
                       </div>
                     </div>
                   </td>
-
-                  {/* ✅ Rol */}
                   <td className="px-4 py-3">
                     {u.id === currentUser?.id ? (
                       <span className="text-gray-500 capitalize">{u.role}</span>
@@ -192,39 +173,21 @@ export default function Users() {
                       </select>
                     )}
                   </td>
-
-                  {/* ✅ Fecha */}
                   <td className="px-4 py-3 text-gray-500">
                     {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}
                   </td>
-
-                  {/* ✅ Acciones */}
                   <td className="px-4 py-3 text-right space-x-2">
                     {u.id !== currentUser?.id && (
                       <>
-                        <button
-                          onClick={() => navigate(`/users/edit/${u.id}`)}
-                          className="text-blue-600 hover:underline text-xs font-medium"
-                        >
-                          Editar
-                        </button>
-
-                        <button
-                          onClick={() => handleDelete(u.id)}
-                          className="text-red-500 hover:underline text-xs font-medium"
-                        >
-                          Eliminar
-                        </button>
+                        <button onClick={() => navigate(`/users/edit/${u.id}`)} className="text-blue-600 hover:underline text-xs font-medium">Editar</button>
+                        <button onClick={() => handleDelete(u.id)} className="text-red-500 hover:underline text-xs font-medium">Eliminar</button>
                       </>
                     )}
                   </td>
-
                 </tr>
               ))}
             </tbody>
           </table>
-
-          {/* ✅ Footer */}
           <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-xs text-gray-400">
             Mostrando {filtered.length} de {users.length} usuarios
           </div>

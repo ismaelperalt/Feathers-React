@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react"
-import type { Address } from "../../api/publicService"
+import type { Address } from "../../types"
 import feathersClient from "../../api/feathers"
 import { useAuth } from "../../context/AuthContext"
 import { useNavigate } from "react-router-dom"
 
-// ✅ Colores para avatares según inicial
+// Colores para avatares según inicial
 const avatarColor = (name: string) => {
   const colors = [
     "bg-blue-500", "bg-emerald-500", "bg-purple-500",
@@ -25,13 +25,13 @@ export default function Addresses() {
   useEffect(() => {
     const service = feathersClient.service("addresses")
 
-    // ✅ CARGA INICIAL (sin axios)
+    // CARGA INICIAL (sin axios)
     service.find()
       .then((res: any) => setAddresses(res.data))
       .catch(() => setError("Error al cargar las direcciones"))
       .finally(() => setLoading(false))
 
-    // ✅ SOCKETS TIEMPO REAL
+    // SOCKETS TIEMPO REAL
     const handleCreated = (data: Address) => {
       setAddresses(prev => [...prev, data])
     }
@@ -68,7 +68,7 @@ export default function Addresses() {
     }
   }
 
-  // ✅ Filtro (igual que tenías)
+  // Filtro (igual que tenías)
   const filtered = addresses.filter(a =>
     a.street?.toLowerCase().includes(search.toLowerCase()) ||
     a.city?.name?.toLowerCase().includes(search.toLowerCase())

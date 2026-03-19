@@ -1,8 +1,5 @@
 import { useEffect, useState } from "react"
-import { getClients } from "../../api/clientService"
-import { getCities, getAddresses } from "../../api/publicService"
 import { useNavigate } from "react-router-dom"
-import api from "../../api/axios"
 import feathersClient, { socket } from "../../api/feathers"
 import { useAuth } from "../../context/AuthContext"
 
@@ -66,17 +63,18 @@ export default function Dashboard() {
       })
     }
 
+    //  Carga inicial — reemplazo de getClients(), getCities(), getAddresses() y api.get("/users")
     Promise.all([
-      getClients(),
-      getCities(),
-      getAddresses(),
-      api.get("/users").then(r => r.data)
-    ]).then(([clients, cities, addresses, users]) => {
+      feathersClient.service("clients").find(),
+      feathersClient.service("cities").find(),
+      feathersClient.service("addresses").find(),
+      feathersClient.service("users").find()
+    ]).then(([clients, cities, addresses, users]: any[]) => {
       setStats({
-        clients:   clients.length,
-        cities:    cities.length,
-        addresses: addresses.length,
-        users:     users.total ?? 0
+        clients:   clients.total   ?? clients.data?.length   ?? 0,
+        cities:    cities.total    ?? cities.data?.length    ?? 0,
+        addresses: addresses.total ?? addresses.data?.length ?? 0,
+        users:     users.total     ?? users.data?.length     ?? 0
       })
     }).finally(() => setLoading(false))
 
@@ -173,10 +171,10 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
 
-      {/* Sección de bienvenida */}
+      {/* Bienvenida */}
       <div className="bg-gradient-to-r from-gray-900 to-gray-700 rounded-2xl px-6 py-8 flex items-center justify-between shadow-md">
         <div>
-          <p className="text-gray-400 text-sm mb-1">Bienvenido de nuevo </p>
+          <p className="text-gray-400 text-sm mb-1">Bienvenido de nuevo</p>
           <h1 className="text-2xl sm:text-3xl font-bold text-white">
             {user?.email?.split("@")[0]}
           </h1>
@@ -184,7 +182,6 @@ export default function Dashboard() {
             {user?.role}
           </span>
         </div>
-        {/* Ícono decorativo */}
         <div className="hidden sm:flex w-16 h-16 rounded-2xl bg-white/10 items-center justify-center">
           <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6.75v6.75" />
@@ -192,7 +189,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/*  Cards con gradiente e iconos */}
+      {/* Cards */}
       <div>
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Resumen general</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -202,19 +199,12 @@ export default function Dashboard() {
               onClick={() => navigate(card.path)}
               className="relative bg-white rounded-2xl shadow-sm border border-gray-200 p-5 cursor-pointer hover:shadow-lg transition group overflow-hidden"
             >
-              {/* Fondo decorativo */}
               <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full bg-gradient-to-br ${card.gradient} opacity-10 group-hover:opacity-20 transition`} />
-
-              {/* Ícono */}
               <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${card.gradient} flex items-center justify-center mb-4 shadow-md`}>
                 {card.icon}
               </div>
-
-              {/* Info */}
               <p className="text-gray-500 text-xs font-medium uppercase tracking-wide">{card.label}</p>
               <p className="text-3xl font-bold text-gray-800 mt-1">{card.value}</p>
-
-              {/*  Flecha indicador */}
               <div className="flex items-center gap-1 mt-3 text-xs font-medium text-gray-400 group-hover:text-blue-500 transition">
                 <span>Ver todos</span>
                 <svg className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -226,7 +216,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Accesos rápidos mejorados */}
+      {/* Accesos rápidos */}
       <div>
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Accesos rápidos</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -236,11 +226,8 @@ export default function Dashboard() {
               onClick={() => navigate(item.path)}
               className={`flex items-center gap-3 border rounded-xl px-4 py-4 text-sm font-medium transition group ${item.color}`}
             >
-              <div className="flex-shrink-0">
-                {item.icon}
-              </div>
+              <div className="flex-shrink-0">{item.icon}</div>
               <span>{item.label}</span>
-              {/*  Flecha */}
               <svg className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>

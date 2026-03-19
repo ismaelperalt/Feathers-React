@@ -47,7 +47,6 @@ export default function AppRouter() {
           <PrivateRoute onlyAdmin><Layout><Dashboard /></Layout></PrivateRoute>
         } />
 
-        {/* Clientes */}
         <Route path="/clients" element={
           <PrivateRoute><Layout><Clients /></Layout></PrivateRoute>
         } />

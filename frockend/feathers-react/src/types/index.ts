@@ -1,5 +1,12 @@
-// src/api/clientService.ts
-import api from "../api/axios"
+// src/types/index.ts
+// ✅ Archivo único de tipos — reemplaza userService, clientService y publicService
+
+export interface User {
+  id: number
+  email: string
+  role: string
+  createdAt?: string
+}
 
 export interface City {
   id: number
@@ -13,6 +20,7 @@ export interface Address {
   street: string
   number?: string
   reference?: string
+  city_id?: number
   city?: City
   [key: string]: any
 }
@@ -25,14 +33,7 @@ export interface Client {
   address_id?: number
   user_id?: number
   address?: Address
+  active?: boolean        
+  client_type?: string    
   [key: string]: any
 }
-
-// Obtener todos los clientes
-export const getClients = async (): Promise<Client[]> => {
-  const res = await api.get<{ data: Client[] }>("/clients")
-  return res.data.data
-}
-
-
-

@@ -16,7 +16,7 @@ const validateFields = (email: string, password: string): string | null => {
 export default function Login() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false) // ✅ mostrar/ocultar
+  const [showPassword, setShowPassword] = useState(false) //  mostrar/ocultar
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({})
   const { login, loading } = useAuth()
@@ -59,7 +59,7 @@ export default function Login() {
      ${hasError ? "border-red-400 focus:ring-red-400" : "border-gray-300 focus:ring-blue-500"}`
 
   return (
-    // ✅ Animación sutil al cargar
+    // Animación sutil al cargar
     <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4 py-8 md:px-8 lg:px-0 animate-fade-in">
 
       <div className="w-full max-w-sm sm:max-w-md lg:max-w-4xl
@@ -78,7 +78,7 @@ export default function Login() {
           <div className="absolute -bottom-16 -right-16 w-64 h-64 rounded-full bg-purple-500 opacity-10" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-blue-600 opacity-5" />
 
-          {/* ✅ Logo y marca */}
+          {/* Logo y marca */}
           <div className="relative z-10 mb-8">
             <div className="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/30">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -214,7 +214,7 @@ export default function Login() {
               )}
             </div>
 
-            {/* ✅ Botón con gradiente */}
+            {/*Botón con gradiente */}
             <button
               type="submit"
               disabled={loading}
@@ -258,7 +258,7 @@ export default function Login() {
         </div>
       </div>
 
-      {/* ✅ Animaciones CSS */}
+      {/* Animaciones CSS */}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; }

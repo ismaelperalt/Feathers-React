@@ -21,6 +21,17 @@ export default function (app: Application): typeof Model {
     },
     user_id: {
       type: DataTypes.INTEGER
+    },
+
+    active: {
+      type: DataTypes.BOOLEAN,
+      defaultValue:true
+    },
+
+    client_type:{
+      type:DataTypes.STRING,
+      defaultValue:"regular"
+
     }
   }, {
     hooks: {

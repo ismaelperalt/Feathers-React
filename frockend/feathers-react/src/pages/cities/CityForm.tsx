@@ -8,6 +8,14 @@ interface City {
   state?: string
 }
 
+// ✅ Nombre de ciudad: solo letras, tildes y espacios, entre 2 y 50 caracteres
+const isValidCityName = (value: string) =>
+  /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]{2,50}$/.test(value.trim())
+
+// ✅ Provincia: solo letras, tildes y espacios, entre 2 y 50 caracteres
+const isValidState = (value: string) =>
+  /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]{2,50}$/.test(value.trim())
+
 export default function CityForm() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -21,11 +29,7 @@ export default function CityForm() {
 
   useEffect(() => {
     if (!isEdit) return
-
-    const service = feathersClient.service("cities")
-
-    // Reemplazo de getCity()
-    service.get(Number(id))
+    feathersClient.service("cities").get(Number(id))
       .then((city: City) => {
         setName(city.name)
         setState(city.state ?? "")
@@ -33,16 +37,21 @@ export default function CityForm() {
       .catch(() => setError("Error al cargar la ciudad"))
   }, [id])
 
-  // Validación
+  // ✅ Validación por campo al perder foco
   const handleBlur = (field: "name" | "state") => {
     if (field === "name") {
-      if (!name.trim()) setFieldErrors(p => ({ ...p, name: "El nombre es obligatorio" }))
-      else if (name.trim().length < 2) setFieldErrors(p => ({ ...p, name: "Mínimo 2 caracteres" }))
-      else setFieldErrors(p => ({ ...p, name: undefined }))
+      if (!name.trim())
+        setFieldErrors(p => ({ ...p, name: "El nombre es obligatorio" }))
+      else if (!isValidCityName(name))
+        setFieldErrors(p => ({ ...p, name: "Solo letras y espacios, entre 2 y 50 caracteres" }))
+      else
+        setFieldErrors(p => ({ ...p, name: undefined }))
     }
     if (field === "state") {
-      if (state && state.trim().length < 2) setFieldErrors(p => ({ ...p, state: "Mínimo 2 caracteres" }))
-      else setFieldErrors(p => ({ ...p, state: undefined }))
+      if (state && !isValidState(state))
+        setFieldErrors(p => ({ ...p, state: "Solo letras y espacios, entre 2 y 50 caracteres" }))
+      else
+        setFieldErrors(p => ({ ...p, state: undefined }))
     }
   }
 
@@ -51,24 +60,18 @@ export default function CityForm() {
     setError(null)
 
     if (!name.trim()) { setError("El nombre de la ciudad es obligatorio"); return }
-    if (name.trim().length < 2) { setError("El nombre debe tener al menos 2 caracteres"); return }
-    if (state && state.trim().length < 2) { setError("La provincia debe tener al menos 2 caracteres"); return }
+    if (!isValidCityName(name)) { setError("El nombre solo puede contener letras y espacios (2-50 caracteres)"); return }
+    if (state && !isValidState(state)) { setError("La provincia solo puede contener letras y espacios (2-50 caracteres)"); return }
 
     setLoading(true)
-
     try {
       const service = feathersClient.service("cities")
-
       if (isEdit) {
-        // Reemplazo de updateCity()
         await service.patch(Number(id), { name, state })
       } else {
-        // Reemplazo de createCity()
         await service.create({ name, state })
       }
-
       navigate("/cities")
-
     } catch {
       setError("Error al guardar la ciudad")
     } finally {
@@ -84,12 +87,9 @@ export default function CityForm() {
   return (
     <div className="p-6 max-w-lg mx-auto">
 
-      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <button
-          onClick={() => navigate("/cities")}
-           className="text-gray-400 hover:text-gray-600 transition"
-        >  ← Volver
+        <button onClick={() => navigate("/cities")} className="text-gray-400 hover:text-gray-600 transition">
+          ← Volver
         </button>
         <div>
           <h1 className="text-2xl font-bold text-gray-800">
@@ -127,9 +127,7 @@ export default function CityForm() {
               className={inputClass(fieldErrors.name)}
             />
             {fieldErrors.name && (
-              <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                {fieldErrors.name}
-              </p>
+              <p className="text-red-500 text-xs mt-1">{fieldErrors.name}</p>
             )}
           </div>
 
@@ -148,9 +146,7 @@ export default function CityForm() {
               className={inputClass(fieldErrors.state)}
             />
             {fieldErrors.state && (
-              <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                {fieldErrors.state}
-              </p>
+              <p className="text-red-500 text-xs mt-1">{fieldErrors.state}</p>
             )}
           </div>
 
@@ -167,7 +163,7 @@ export default function CityForm() {
               disabled={loading}
               className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-medium py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-2"
             >
-              {loading ? "Guardando..." : (isEdit ? "Actualizar" : "Crear ciudad")}
+              {loading ? "Guardando..." : isEdit ? "Actualizar" : "Crear ciudad"}
             </button>
           </div>
 

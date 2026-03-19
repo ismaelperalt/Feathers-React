@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import type { City } from "../../api/publicService"
+import type { City } from "../../types"
 import feathersClient from "../../api/feathers"
 import { useAuth } from "../../context/AuthContext"
 import { useNavigate } from "react-router-dom"
@@ -11,7 +11,7 @@ interface FeathersService {
   remove(id: number): Promise<any>
 }
 
-// ✅ Colores para avatares según inicial
+//  Colores para avatares según inicial
 const avatarColor = (name: string) => {
   const colors = [
     "bg-blue-500", "bg-emerald-500", "bg-purple-500",
@@ -51,7 +51,7 @@ export default function Cities() {
     service.on("patched", handlePatched)
     service.on("removed", handleRemoved)
 
-    // ✅ Reemplazo de getCities()
+    // Reemplazo de getCities()
     service.find()
       .then((res: any) => setCities(res.data))
       .catch(() => setError("Error al cargar las ciudades"))
@@ -67,7 +67,7 @@ export default function Cities() {
   const handleDelete = async (id: number) => {
     if (!confirm("¿Eliminar esta ciudad?")) return
     try {
-      // ✅ Reemplazo de deleteCity()
+      // Reemplazo de deleteCity()
       const service = feathersClient.service("cities") as unknown as FeathersService
       await service.remove(id)
     } catch {
@@ -75,7 +75,7 @@ export default function Cities() {
     }
   }
 
-  // ✅ Filtro por nombre o provincia
+  // Filtro por nombre o provincia
   const filtered = cities.filter(c =>
     c.name?.toLowerCase().includes(search.toLowerCase()) ||
     c.state?.toLowerCase().includes(search.toLowerCase())
