@@ -2,7 +2,10 @@
 import { HookContext } from '@feathersjs/feathers';
 
 export const authorize = (...roles: string[]) => {
+
+
   return async (context: HookContext): Promise<HookContext> => {
+
     if (!context.params.provider) return context;
 
     const user = context.params.user;
@@ -14,4 +17,5 @@ export const authorize = (...roles: string[]) => {
 
     return context;
   }
+  
 }

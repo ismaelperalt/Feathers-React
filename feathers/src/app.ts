@@ -39,9 +39,16 @@ app.use(express.urlencoded({ extended: true }));
 app.use(favicon(path.join(app.get('public'), 'favicon.ico')));
 app.use('/', express.static(app.get('public')));
 
+
 // Set up Plugins and providers
 app.configure(express.rest());
-app.configure(socketio());
+
+app.configure(socketio((io) => {
+  io.origins((origin, callback) => {
+    callback(null, true)
+  })
+}))
+
 
 app.configure(sequelize);
 app.configure(middleware);

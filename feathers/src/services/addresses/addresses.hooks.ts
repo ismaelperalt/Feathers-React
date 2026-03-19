@@ -3,7 +3,7 @@ import { authorize } from '../../hooks/authorize';
 
 const { authenticate } = authentication.hooks;
 
-// ✅ Hook que popula la ciudad en cada resultado
+//  Hook que popula la ciudad en cada resultado
 const populateCity = async (context: any) => {
   const sequelizeClient = context.app.get('sequelizeClient');
   const cities = sequelizeClient.models.cities;
@@ -42,9 +42,9 @@ export default {
   },
   after: {
     all: [],
-    find: [populateCity],   // ✅ popula en lista
-    get:  [populateCity],   // ✅ popula en individual
-    create: [populateCity], // ✅ popula al crear — fix del socket
+    find: [populateCity],   //  popula en lista
+    get:  [populateCity],   //  popula en individual
+    create: [populateCity], // popula al crear — fix del socket
     update: [populateCity],
     patch:  [populateCity],
     remove: []
